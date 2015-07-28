@@ -16,7 +16,7 @@ use YAML;
 use URI::Encode qw/uri_encode/;
 use Encode;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.001;
+our $VERSION = 0.002;
 
 with "MooseX::Log::Log4perl";
 
