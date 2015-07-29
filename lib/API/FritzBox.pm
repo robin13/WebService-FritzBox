@@ -9,7 +9,7 @@ use MooseX::Params::Validate;
 use Try::Tiny;
 use YAML;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.004;
+our $VERSION = 0.005;
 
 with "MooseX::Log::Log4perl";
 
@@ -276,11 +276,11 @@ sub bandwidth {
     };
     if( $document->{current}{upstream}{total} > $document->{max}{upstream} ){
         $self->log->warn( sprintf( "Upstream total (%u) is greater than the max available bandwidth (%u)",
-            $document->{current}{upstream}{total}, $document->{max}{upstream} ) );
+            $document->{current}{upstream}{total}, $document->{available}{upstream} ) );
     }
     if( $document->{current}{downstream}{total} > $document->{max}{downstream} ){
         $self->log->warn( sprintf( "Downstream total (%u) is greater than the max available bandwidth (%u)",
-            $document->{current}{downstream}{total}, $document->{max}{downstream} ) );
+            $document->{current}{downstream}{total}, $document->{available}{downstream} ) );
     }
 
     return $document;
