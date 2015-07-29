@@ -9,7 +9,7 @@ use MooseX::Params::Validate;
 use Try::Tiny;
 use YAML;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.006;
+our $VERSION = 0.007;
 
 with "MooseX::Log::Log4perl";
 
@@ -220,11 +220,11 @@ Example response:
       downstream: 342241935
       upstream: 655811
 
-The section `current` represents the current (last 5 seconds) bandwith consumption.
-The value `current.downstream.total` is the sum of the `media` and `internet` fields
-The value `current.upstream.total` is the sum of the respective `default`, `high`, `low` and `realtime` fields
-The section `available` is the available bandwidth as reported by the DSL modem.
-The section `max` represents
+The section C<current> represents the current (last 5 seconds) bandwith consumption.
+The value C<current.downstream.total> is the sum of the C<media> and C<internet> fields
+The value C<current.upstream.total> is the sum of the respective C<default>, C<high>, C<low> and C<realtime> fields
+The section C<available> is the available bandwidth as reported by the DSL modem.
+The section C<max> represents
 
 =cut
 sub bandwidth {

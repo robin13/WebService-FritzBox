@@ -69,11 +69,11 @@ Interact with FritzBox devices
           downstream: 342241935
           upstream: 655811
 
-    The section \`current\` represents the current (last 5 seconds) bandwith consumption.
-    The value \`current.downstream.total\` is the sum of the \`media\` and \`internet\` fields
-    The value \`current.upstream.total\` is the sum of the respective \`default\`, \`high\`, \`low\` and \`realtime\` fields
-    The section \`available\` is the available bandwidth as reported by the DSL modem.
-    The section \`max\` represents
+    The section `current` represents the current (last 5 seconds) bandwith consumption.
+    The value `current.downstream.total` is the sum of the `media` and `internet` fields
+    The value `current.upstream.total` is the sum of the respective `default`, `high`, `low` and `realtime` fields
+    The section `available` is the available bandwidth as reported by the DSL modem.
+    The section `max` represents
 
 # COPYRIGHT
 
