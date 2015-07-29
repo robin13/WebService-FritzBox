@@ -274,12 +274,16 @@ sub bandwidth {
             },
         }
     };
+
+    # Info if the current bandwidth is higher than what we expect to have available (this is not a problem, but
+    # it is odd...)
+    # Occasionally (when DSL reconnects) there can be massive spikes... maybe these should be cut out?
     if( $document->{current}{upstream}{total} > $document->{available}{upstream} ){
-        $self->log->warn( sprintf( "Upstream total (%u) is greater than the max available bandwidth (%u)",
+        $self->log->info( sprintf( "Upstream total (%u) is greater than the available bandwidth (%u)",
             $document->{current}{upstream}{total}, $document->{available}{upstream} ) );
     }
     if( $document->{current}{downstream}{total} > $document->{available}{downstream} ){
-        $self->log->warn( sprintf( "Downstream total (%u) is greater than the max available bandwidth (%u)",
+        $self->log->info( sprintf( "Downstream total (%u) is greater than the available bandwidth (%u)",
             $document->{current}{downstream}{total}, $document->{available}{downstream} ) );
     }
 
