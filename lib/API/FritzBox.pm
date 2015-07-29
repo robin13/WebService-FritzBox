@@ -1,22 +1,15 @@
 package API::FritzBox;
 # ABSTRACT: API interface to FritzBox devices
+use Digest::MD5 qw/md5_hex/;
+use JSON::MaybeXS;
+use LWP::UserAgent;
+use Log::Log4perl;
 use Moose;
 use MooseX::Params::Validate;
-use MooseX::WithCache;
-use File::Spec::Functions; # catfile
-use MIME::Base64;
-use File::Path qw/make_path/;
-use LWP::UserAgent;
-use HTTP::Request;
-use HTTP::Headers;
-use JSON::MaybeXS;
-use Digest::MD5 qw/md5_hex/;
-use Log::Log4perl;
+use Try::Tiny;
 use YAML;
-use URI::Encode qw/uri_encode/;
-use Encode;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.002;
+our $VERSION = 0.004;
 
 with "MooseX::Log::Log4perl";
 
@@ -141,11 +134,11 @@ sub _build_sid {
     $ch_pw =~ s/(.)/$1 . chr(0)/eg;
     my $md5 = lc(md5_hex($ch_pw));
     my $challenge_response = $challenge_str . '-' . $md5;
-    # Session ID erfragen
+    # Get session id
     $response = $self->user_agent->get( $self->base_url . '/login_sid.lua?user=&response=' . $challenge_response );
     $self->log->trace( "Login (challenge sent) http response :\n" . Dump( $response ) ) if $self->log->is_trace;
 
-    # Session ID aus XML Daten auslesen
+    # Read session id from XMl
     my( $sid ) = ( $response->content =~ /<SID>(\w+)/i );
     $self->log->debug( "SID: $sid" );
     return $sid;
@@ -153,7 +146,6 @@ sub _build_sid {
 
 sub _set_loglevel {
     my( $self, $new, $old ) = @_;
-    print "Setting loglevel to $new\n";
     $self->log->level( $new );
 }
 
@@ -199,6 +191,99 @@ sub get {
         'sid=' . $self->sid );
     $self->log->trace( Dump( $response ) ) if $self->log->is_trace;
     return $response;
+}
+
+=item bandwidth
+
+A wrapper around the /inetstat_monitor endpoint which responds with a normalised hash.  The monitor web page
+on the fritz.box refreshes every 5 seconds, and it seems there is a new value every 5 seconds... 5 seconds is
+probably a reasonable lowest request interval for this method.
+
+Example response:
+
+    ---
+    available:
+      downstream: 11404000
+      upstream: 2593000
+    current:
+      downstream:
+        internet: 303752
+        media: 0
+        total: 303752
+      upstream:
+        default: 33832
+        high: 22640
+        low: 0
+        realtime: 1600
+        total: 58072
+    max:
+      downstream: 342241935
+      upstream: 655811
+
+The section `current` represents the current (last 5 seconds) bandwith consumption.
+The value `current.downstream.total` is the sum of the `media` and `internet` fields
+The value `current.upstream.total` is the sum of the respective `default`, `high`, `low` and `realtime` fields
+The section `available` is the available bandwidth as reported by the DSL modem.
+The section `max` represents
+
+=cut
+sub bandwidth {
+    my $self = shift;
+
+    my $response = $self->get( path => '/internet/inetstat_monitor.lua?useajax=1&xhr=1&action=get_graphic' );
+    $self->log->trace( Dump( $response ) ) if $self->log->is_trace();
+    if( not $response->is_success ){
+        $self->log->logdie( "Request failed: ($response->code): $response->decoded_content" );
+    }
+    my $data;
+    try{
+        $data = decode_json( $response->decoded_content );
+        # It's just an array with one element...
+        $data = $data->[0];
+    }catch{
+        $self->log->logdie( "Could not decode json: $_" );
+    };
+    
+    # There is an array of values for every key, but we just want to capture the latest one
+    my %latest;
+    foreach( qw/prio_default_bps prio_high_bps prio_low_bps prio_realtime_bps mc_current_bps ds_current_bps/ ){
+        # all the '_bps' entries are bytes per second... multiply by 8 to normalise to bits per second
+        $latest{$_} = ( split( ',', $data->{$_} ) )[0] * 8;
+    }
+    my $document = {
+        "available" => {
+            "upstream"      => int( $data->{upstream} ),
+            "downstream"    => int( $data->{downstream} ),
+        },
+        "max" => {
+            "upstream"   => int( $data->{max_us} ),
+            "downstream" => int( $data->{max_ds} ),
+        },
+        "current" => {
+            "upstream" => {
+                "low"       => int( $latest{prio_low_bps} ),
+                "default"   => int( $latest{prio_default_bps} ),
+                "high"      => int( $latest{prio_high_bps} ),
+                "realtime"  => int( $latest{prio_realtime_bps} ),
+                "total"     => $latest{prio_low_bps} + $latest{prio_default_bps} + $latest{prio_high_bps} + $latest{prio_realtime_bps},
+            },
+            "downstream" => {
+                "internet"  => int( $latest{ds_current_bps} ),
+                "media"     => int( $latest{mc_current_bps} ),
+                "total"     => $latest{ds_current_bps} + $latest{mc_current_bps},
+            },
+        }
+    };
+    if( $document->{current}{upstream}{total} > $document->{max}{upstream} ){
+        $self->log->warn( sprintf( "Upstream total (%u) is greater than the max available bandwidth (%u)",
+            $document->{current}{upstream}{total}, $document->{max}{upstream} ) );
+    }
+    if( $document->{current}{downstream}{total} > $document->{max}{downstream} ){
+        $self->log->warn( sprintf( "Downstream total (%u) is greater than the max available bandwidth (%u)",
+            $document->{current}{downstream}{total}, $document->{max}{downstream} ) );
+    }
+
+    return $document;
 }
 
 1;

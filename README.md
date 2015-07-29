@@ -42,6 +42,39 @@ Interact with FritzBox devices
 
     Returns the HTTP::Response object
 
+- bandwidth
+
+    A wrapper around the /inetstat\_monitor endpoint which responds with a normalised hash.  The monitor web page
+    on the fritz.box refreshes every 5 seconds, and it seems there is a new value every 5 seconds... 5 seconds is
+    probably a reasonable lowest request interval for this method.
+
+    Example response:
+
+        ---
+        available:
+          downstream: 11404000
+          upstream: 2593000
+        current:
+          downstream:
+            internet: 303752
+            media: 0
+            total: 303752
+          upstream:
+            default: 33832
+            high: 22640
+            low: 0
+            realtime: 1600
+            total: 58072
+        max:
+          downstream: 342241935
+          upstream: 655811
+
+    The section \`current\` represents the current (last 5 seconds) bandwith consumption.
+    The value \`current.downstream.total\` is the sum of the \`media\` and \`internet\` fields
+    The value \`current.upstream.total\` is the sum of the respective \`default\`, \`high\`, \`low\` and \`realtime\` fields
+    The section \`available\` is the available bandwidth as reported by the DSL modem.
+    The section \`max\` represents
+
 # COPYRIGHT
 
 Copyright 2015, Robin Clarke 
