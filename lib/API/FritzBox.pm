@@ -9,7 +9,7 @@ use MooseX::Params::Validate;
 use Try::Tiny;
 use YAML;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.005;
+our $VERSION = 0.006;
 
 with "MooseX::Log::Log4perl";
 
@@ -108,7 +108,7 @@ has 'sid' => (
 
 sub _build_user_agent {
     my $self = shift;
-    $self->log->debug( "Building zendesk useragent" );
+    $self->log->debug( "Building useragent" );
     my $ua = LWP::UserAgent->new(
 	keep_alive	=> 1
     );
