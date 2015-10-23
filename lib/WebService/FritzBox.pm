@@ -1,5 +1,5 @@
-package API::FritzBox;
-# ABSTRACT: API interface to FritzBox devices
+package WebService::FritzBox;
+# ABSTRACT: Interface to FritzBox devices
 use Digest::MD5 qw/md5_hex/;
 use JSON::MaybeXS;
 use LWP::UserAgent;
@@ -15,7 +15,7 @@ with "MooseX::Log::Log4perl";
 
 =head1 NAME
 
-API::FritzBox
+WebService::FritzBox
 
 =head1 DESCRIPTION
 
