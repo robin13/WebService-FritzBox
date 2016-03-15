@@ -9,7 +9,7 @@ use MooseX::Params::Validate;
 use Try::Tiny;
 use YAML;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.008;
+our $VERSION = 0.009;
 
 with "MooseX::Log::Log4perl";
 
@@ -185,6 +185,31 @@ sub get {
     );
 
     my $response = $self->user_agent->get(
+        $self->base_url .
+        $params{path} .
+        ( $params{path} =~ m/\?/ ? '&' : '?' ) .
+        'sid=' . $self->sid );
+    $self->log->trace( Dump( $response ) ) if $self->log->is_trace;
+    return $response;
+}
+
+=item post
+
+POST some path from the FritzBox.  e.g.
+    
+  my $response = $fb->post( path => '/system/syslog.lua?delete=1' ); 
+
+Returns the HTTP::Response object
+
+=cut
+
+sub post {
+    my ( $self, %params ) = validated_hash(
+        \@_,
+        path        => { isa    => 'Str' },
+    );
+
+    my $response = $self->user_agent->post(
         $self->base_url .
         $params{path} .
         ( $params{path} =~ m/\?/ ? '&' : '?' ) .
