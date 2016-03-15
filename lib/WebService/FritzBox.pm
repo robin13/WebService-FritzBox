@@ -9,7 +9,7 @@ use MooseX::Params::Validate;
 use Try::Tiny;
 use YAML;
 BEGIN { Log::Log4perl->easy_init() };
-our $VERSION = 0.009;
+our $VERSION = 0.010;
 
 with "MooseX::Log::Log4perl";
 
@@ -207,13 +207,16 @@ sub post {
     my ( $self, %params ) = validated_hash(
         \@_,
         path        => { isa    => 'Str' },
+        content     => { isa    => 'Str', optional => 1 }
     );
+
+    $params{content} .= ( $params{content} ? '&' : '' ) . 'sid=' . $self->sid;
 
     my $response = $self->user_agent->post(
         $self->base_url .
-        $params{path} .
-        ( $params{path} =~ m/\?/ ? '&' : '?' ) .
-        'sid=' . $self->sid );
+        $params{path},
+        Content => $params{content}
+        );
     $self->log->trace( Dump( $response ) ) if $self->log->is_trace;
     return $response;
 }
